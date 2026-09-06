@@ -116,9 +116,18 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
       cursor.classList.remove("is-active");
     }
   });
-  document.addEventListener("pointerdown", () => { pressed = true; });
-  document.addEventListener("pointerup", () => { pressed = false; });
-  window.addEventListener("blur", () => { pressed = false; });
+  document.addEventListener("pointerdown", () => {
+    pressed = true;
+    cursor.classList.add("is-pressed");
+  });
+  document.addEventListener("pointerup", () => {
+    pressed = false;
+    cursor.classList.remove("is-pressed");
+  });
+  window.addEventListener("blur", () => {
+    pressed = false;
+    cursor.classList.remove("is-pressed");
+  });
 
   const animateCursor = (now) => {
     const frameScale = clamp((now - lastFrame) / (1000 / 60), 0.5, 2);
@@ -133,16 +142,16 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
     smoothSpeed += (speed - smoothSpeed) * (0.25 * frameScale);
 
     const motionRotation = reducedMotion ? 0 : clamp(velocityX * 0.22, -6, 6);
-    const targetRotation = interactive ? motionRotation * 0.55 : motionRotation;
-    const spring = reducedMotion ? 0.7 : 0.2;
+    const targetRotation = interactive ? motionRotation * 0.35 - 3.5 : motionRotation;
+    const spring = reducedMotion ? 0.7 : interactive ? 0.32 : 0.2;
     const damping = reducedMotion ? 0 : 0.72;
     rotationVelocity = (rotationVelocity + (targetRotation - rotation) * spring * frameScale) * damping;
     rotation += rotationVelocity * frameScale;
 
     const speedRatio = reducedMotion ? 0 : clamp(smoothSpeed / 34, 0, 1);
-    const hoverScale = interactive ? 1.09 : 1;
-    const pressScaleX = pressed ? 0.94 : 1;
-    const pressScaleY = pressed ? 0.96 : 1;
+    const hoverScale = interactive ? 1.22 : 1;
+    const pressScaleX = pressed ? 0.88 : 1;
+    const pressScaleY = pressed ? 0.92 : 1;
     const targetScaleX = hoverScale * pressScaleX * (1 - speedRatio * 0.025);
     const targetScaleY = hoverScale * pressScaleY * (1 + speedRatio * 0.025);
     const scaleEase = pressed ? 0.48 : 0.2;

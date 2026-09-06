@@ -656,12 +656,55 @@ nav a:hover, nav a:focus-visible { color: var(--leaf-deep); outline: none; }
     will-change: transform;
   }
 
-  .leaf-cursor-veins {
-    opacity: 0.92;
-    transition: opacity 200ms ease;
+  .leaf-cursor-aura {
+    fill: rgba(101, 185, 121, 0.14);
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 21.4px 2.5px;
+    transform: scale(0.12);
+    transition: opacity 150ms ease, transform 180ms cubic-bezier(.2,.9,.2,1);
   }
 
-  .leaf-cursor.is-active .leaf-cursor-veins { opacity: 0.98; }
+  .leaf-cursor-body {
+    transition: fill 150ms ease;
+  }
+
+  .leaf-cursor-veins {
+    opacity: 0.92;
+    transition: opacity 160ms ease, stroke 160ms ease;
+  }
+
+  .leaf-cursor-bud {
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 21.4px 2.5px;
+    transform: scale(0.46) rotate(-8deg);
+    transition: opacity 140ms ease, transform 180ms cubic-bezier(.2,.9,.2,1);
+  }
+
+  .leaf-cursor.is-active .leaf-cursor-aura {
+    opacity: 1;
+    transform: scale(1.75);
+  }
+
+  .leaf-cursor.is-active .leaf-cursor-body { fill: #177052; }
+
+  .leaf-cursor.is-active .leaf-cursor-veins {
+    opacity: 1;
+    stroke: #c2d0bf;
+  }
+
+  .leaf-cursor.is-active .leaf-cursor-bud {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  .leaf-cursor.is-pressed .leaf-cursor-aura {
+    opacity: 0.62;
+    transform: scale(1.18);
+  }
+
+  .leaf-cursor.is-pressed .leaf-cursor-body { fill: #0b473d; }
 }
 
 dialog {
