@@ -2,6 +2,7 @@ const enterScreen = document.querySelector("#enterScreen");
 const enterButton = document.querySelector("#enterButton");
 const cursor = document.querySelector(".leaf-cursor");
 const cursorArt = document.querySelector(".leaf-cursor-art");
+const cursorParticles = document.querySelector("#cursorParticles");
 const copyEmail = document.querySelector("#copyEmail");
 const terminal = document.querySelector("#terminal");
 const terminalInput = document.querySelector("#terminalInput");
@@ -65,6 +66,11 @@ enterButton.addEventListener("click", () => {
 if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hotspot = { x: 21.4, y: 2.5 };
+  const particles = [];
+  const particleColors = ["#7bcb86", "#afc8ad", "#f6f8ec"];
+  const particleContext = cursorParticles && !reducedMotion ? cursorParticles.getContext("2d") : null;
+  let particleWidth = 0;
+  let particleHeight = 0;
   let mouseX = -100;
   let mouseY = -100;
   let previousX = mouseX;
@@ -79,8 +85,80 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
   let pressed = false;
   let hasPointerPosition = false;
   let lastFrame = performance.now();
+  let lastParticleAt = 0;
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  const resizeParticleCanvas = () => {
+    if (!cursorParticles || !particleContext) return;
+    const ratio = window.devicePixelRatio || 1;
+    particleWidth = window.innerWidth;
+    particleHeight = window.innerHeight;
+    cursorParticles.width = Math.round(particleWidth * ratio);
+    cursorParticles.height = Math.round(particleHeight * ratio);
+    cursorParticles.style.width = `${particleWidth}px`;
+    cursorParticles.style.height = `${particleHeight}px`;
+    particleContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+  };
+
+  const emitParticle = (speed) => {
+    if (!particleContext || particles.length > 18) return;
+    const intensity = interactive ? 1.2 : 1;
+    const tailX = mouseX - 8 + (Math.random() - 0.5) * 8;
+    const tailY = mouseY + 30 + (Math.random() - 0.5) * 10;
+    const isLeafChip = interactive && Math.random() > 0.45;
+    particles.push({
+      x: tailX,
+      y: tailY,
+      vx: (-0.28 - Math.random() * 0.55) * intensity,
+      vy: (0.18 + Math.random() * 0.5) * intensity,
+      life: 0,
+      ttl: 430 + Math.random() * (interactive ? 320 : 220),
+      size: isLeafChip ? 4.5 + Math.random() * 2.5 : 2 + Math.random() * 2.5,
+      color: particleColors[Math.floor(Math.random() * particleColors.length)],
+      angle: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.035,
+      leaf: isLeafChip,
+      alpha: clamp(0.35 + speed / 90, 0.36, interactive ? 0.72 : 0.54),
+    });
+  };
+
+  const drawParticles = (delta) => {
+    if (!particleContext) return;
+    particleContext.clearRect(0, 0, particleWidth, particleHeight);
+    for (let index = particles.length - 1; index >= 0; index -= 1) {
+      const particle = particles[index];
+      particle.life += delta;
+      if (particle.life >= particle.ttl) {
+        particles.splice(index, 1);
+        continue;
+      }
+      const progress = particle.life / particle.ttl;
+      particle.x += particle.vx * delta * 0.06;
+      particle.y += particle.vy * delta * 0.06;
+      particle.vy -= 0.004 * delta;
+      particle.angle += particle.spin * delta;
+      const opacity = particle.alpha * (1 - progress);
+
+      particleContext.save();
+      particleContext.globalAlpha = opacity;
+      particleContext.translate(particle.x, particle.y);
+      particleContext.rotate(particle.angle);
+      particleContext.fillStyle = particle.color;
+      if (particle.leaf) {
+        particleContext.beginPath();
+        particleContext.ellipse(0, 0, particle.size * 0.45, particle.size, 0.65, 0, Math.PI * 2);
+        particleContext.fill();
+      } else {
+        particleContext.beginPath();
+        particleContext.arc(0, 0, particle.size, 0, Math.PI * 2);
+        particleContext.fill();
+      }
+      particleContext.restore();
+    }
+  };
+
+  resizeParticleCanvas();
+  window.addEventListener("resize", resizeParticleCanvas);
 
   document.addEventListener("pointermove", (event) => {
     mouseX = event.clientX;
@@ -130,7 +208,8 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
   });
 
   const animateCursor = (now) => {
-    const frameScale = clamp((now - lastFrame) / (1000 / 60), 0.5, 2);
+    const deltaMs = now - lastFrame;
+    const frameScale = clamp(deltaMs / (1000 / 60), 0.5, 2);
     lastFrame = now;
 
     const dx = mouseX - previousX;
@@ -140,6 +219,10 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
     velocityX += (dx - velocityX) * (0.34 * frameScale);
     const speed = Math.hypot(dx, dy);
     smoothSpeed += (speed - smoothSpeed) * (0.25 * frameScale);
+    if (particleContext && hasPointerPosition && speed > 1.8 && now - lastParticleAt > (interactive ? 22 : 38)) {
+      emitParticle(speed);
+      lastParticleAt = now;
+    }
 
     const motionRotation = reducedMotion ? 0 : clamp(velocityX * 0.22, -6, 6);
     const targetRotation = interactive ? motionRotation * 0.35 - 3.5 : motionRotation;
@@ -161,6 +244,7 @@ if (cursor && cursorArt && matchMedia("(pointer: fine)").matches) {
     // The outer layer locks the SVG hotspot to the pointer; all motion pivots behind it.
     cursor.style.transform = `translate3d(${mouseX - hotspot.x}px, ${mouseY - hotspot.y}px, 0)`;
     cursorArt.style.transform = `rotate(${rotation + (pressed ? 1.2 : 0)}deg) scale(${scaleX}, ${scaleY})`;
+    drawParticles(deltaMs);
     requestAnimationFrame(animateCursor);
   };
 

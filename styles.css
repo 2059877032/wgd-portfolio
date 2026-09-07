@@ -633,6 +633,15 @@ nav a:hover, nav a:focus-visible { color: var(--leaf-deep); outline: none; }
     cursor: none !important;
   }
 
+  .cursor-particles {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
   .leaf-cursor {
     position: fixed;
     left: 0;
@@ -792,7 +801,8 @@ dialog::backdrop { background: rgba(24, 35, 27, 0.45); backdrop-filter: blur(8px
 
 @media (max-width: 640px) {
   body { cursor: auto; }
-  .leaf-cursor { display: none; }
+  .leaf-cursor,
+  .cursor-particles { display: none; }
   .site-header { height: auto; min-height: 68px; align-items: flex-start; padding-top: 1rem; }
   nav { flex-wrap: wrap; justify-content: flex-end; gap: 0.7rem; }
   .index-rail { display: none; }
